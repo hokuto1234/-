@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>配送先管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f4f6f9;--white:#fff;--border:#dde1ea;
+    --accent:#1a56db;--accent-light:#e8eefb;
+    --accent2:#057a55;--accent2-light:#ecfdf5;
+    --danger:#e02424;--text:#1a202c;--text-sub:#6b7280;
+    --shadow:0 1px 4px rgba(0,0,0,.08);--shadow-md:0 4px 16px rgba(0,0,0,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  .mobile-only{display:none;} /* デフォルト（PC）では非表示 */
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+
+  /* ===== OVERLAY SCREENS ===== */
+  .screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px;}
+  .screen.hidden{display:none;}
+
+  /* PASSWORD */
+  .pw-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:360px;max-width:100%;box-shadow:var(--shadow-md);text-align:center;}
+  .pw-logo{font-size:2rem;margin-bottom:8px;}
+  .pw-title{font-weight:700;font-size:1.1rem;color:var(--accent);margin-bottom:4px;}
+  .pw-sub{color:var(--text-sub);font-size:.82rem;margin-bottom:28px;}
+  .pw-card input[type=password]{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:.95rem;font-family:'Noto Sans JP',sans-serif;outline:none;margin-bottom:12px;text-align:center;letter-spacing:2px;transition:border-color .2s;}
+  .pw-card input[type=password]:focus{border-color:var(--accent);}
+  .pw-card .btn-login{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:.95rem;font-family:'Noto Sans JP',sans-serif;font-weight:500;cursor:pointer;}
+  .pw-card .btn-login:hover{background:#1648c7;}
+  .pw-error{color:var(--danger);font-size:.82rem;margin-top:10px;display:none;}
+
+  /* USER SELECT */
+  .user-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:40px 36px;width:400px;max-width:100%;box-shadow:var(--shadow-md);text-align:center;}
+  .user-title{font-weight:700;font-size:1rem;color:var(--text);margin-bottom:6px;}
+  .user-sub{color:var(--text-sub);font-size:.83rem;margin-bottom:28px;}
+  .user-btns{display:flex;flex-direction:column;gap:10px;}
+  .user-btn{padding:14px;border:2px solid var(--border);border-radius:10px;background:var(--white);cursor:pointer;font-size:.95rem;font-family:'Noto Sans JP',sans-serif;font-weight:500;transition:all .15s;display:flex;align-items:center;gap:10px;}
+  .user-btn:hover{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
+  .user-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0;}
+
+  /* SETUP */
+  #setup-screen{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;z-index:9998;padding:24px;overflow-y:auto;}
+  #setup-screen.open{display:flex;}
+  .setup-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:36px;width:580px;max-width:100%;box-shadow:var(--shadow-md);}
+  .setup-logo{font-weight:700;font-size:1.05rem;color:var(--accent);margin-bottom:4px;}
+  .setup-sub{color:var(--text-sub);font-size:.83rem;margin-bottom:22px;}
+  .setup-step{display:flex;align-items:flex-start;gap:12px;margin-bottom:13px;}
+  .step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+  .step-text{font-size:.84rem;line-height:1.65;color:var(--text);}
+  .step-text a{color:var(--accent);}
+  .step-text code{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:.79rem;}
+  .setup-input-row{display:flex;gap:8px;margin-top:18px;}
+  .setup-input-row input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color .2s;}
+  .setup-input-row input:focus{border-color:var(--accent);}
+  .setup-err{color:var(--danger);font-size:.82rem;margin-top:8px;display:none;}
+  .setup-note{margin-top:12px;padding:11px 14px;background:var(--accent-light);border:1px solid #c3d5f9;border-radius:8px;font-size:.78rem;color:#1e40af;line-height:1.65;}
+
+  /* LOADING */
+  .loading-bar{position:fixed;top:0;left:0;right:0;height:3px;background:var(--accent);z-index:9997;display:none;}
+  .loading-bar.active{display:block;animation:lpulse 1.2s ease-in-out infinite;}
+  @keyframes lpulse{0%{opacity:1;transform:scaleX(.1);transform-origin:left}50%{transform:scaleX(.7)}100%{opacity:0;transform:scaleX(1)}}
+
+  /* HEADER */
+  header{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:12px;height:56px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+  .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1rem;color:var(--accent);}
+  .header-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .current-user{display:flex;align-items:center;gap:6px;font-size:.84rem;font-weight:600;padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:var(--bg);cursor:pointer;}
+  .current-user:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+  .sync-status{font-size:.78rem;padding:3px 10px;border-radius:20px;border:1px solid var(--border);}
+  .sync-ok{background:#f0fdf4;color:var(--accent2);border-color:#a7f3d0;}
+  .sync-err{background:#fef2f2;color:var(--danger);border-color:#fecaca;}
+  .sync-ing{background:var(--bg);color:var(--text-sub);}
+
+  /* TABS */
+  .tabs{background:var(--white);border-bottom:1px solid var(--border);display:flex;padding:0 24px;overflow-x:auto;}
+  .tab{padding:14px 18px;cursor:pointer;font-size:.87rem;font-weight:500;color:var(--text-sub);border-bottom:2px solid transparent;transition:all .18s;white-space:nowrap;}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab:hover:not(.active){color:var(--text);}
+
+  /* CONTENT */
+  .content{padding:24px;max-width:1200px;margin:0 auto;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
+  .search-wrap{position:relative;flex:1;min-width:200px;}
+  .search-wrap input{width:100%;padding:9px 12px 9px 36px;background:var(--white);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.88rem;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+  .search-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+  .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-sub);pointer-events:none;}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;gap:5px;padding:9px 16px;border-radius:8px;border:none;cursor:pointer;font-size:.85rem;font-family:'Noto Sans JP',sans-serif;font-weight:500;transition:all .15s;white-space:nowrap;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover:not(:disabled){background:#1648c7;}
+  .btn-success{background:var(--accent2);color:#fff;}
+  .btn-success:hover:not(:disabled){background:#046c4e;}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .btn-danger:hover:not(:disabled){background:#c81e1e;}
+  .btn-outline{background:var(--white);color:var(--text);border:1px solid var(--border);}
+  .btn-outline:hover:not(:disabled){background:var(--bg);}
+  .btn-map{background:var(--accent-light);color:var(--accent);border:1px solid #c3d5f9;}
+  .btn-map:hover{background:#d6e4fc;}
+  .btn-sm{padding:5px 11px;font-size:.78rem;border-radius:6px;}
+
+  /* STATS */
+  .stats-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+  .stat-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);}
+  .stat-val{font-size:1.5rem;font-weight:700;color:var(--accent);line-height:1;}
+  .stat-label{font-size:.75rem;color:var(--text-sub);margin-top:2px;}
+
+  /* TABLE */
+  .table-wrap{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+  table{width:100%;border-collapse:collapse;}
+  thead{background:var(--bg);}
+  th{padding:11px 16px;text-align:left;font-size:.76rem;font-weight:600;color:var(--text-sub);letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+  td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:.86rem;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#fafbfd;}
+  tr.row-selected td{background:var(--accent-light);}
+  .cell-name{font-weight:600;}
+  .cell-sub{color:var(--text-sub);font-size:.79rem;margin-top:2px;}
+  .cell-note{color:var(--text-sub);font-size:.8rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tag{display:inline-block;font-size:.7rem;padding:1px 7px;border-radius:20px;background:var(--accent-light);color:var(--accent);border:1px solid #c3d5f9;margin:1px;}
+  .actions-cell{display:flex;gap:4px;flex-wrap:wrap;}
+  input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--accent);}
+  .empty-state{text-align:center;padding:64px 20px;color:var(--text-sub);}
+  .empty-icon{font-size:2.5rem;margin-bottom:10px;}
+  .empty-title{font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:4px;}
+
+  /* ROUTE PANEL */
+  .route-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:20px;}
+  @media(max-width:768px){.route-grid{grid-template-columns:1fr;}}
+  .panel{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:20px;box-shadow:var(--shadow);}
+  .panel-title{font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .badge{background:var(--accent);color:#fff;font-size:.72rem;border-radius:20px;padding:1px 8px;font-weight:600;}
+  .route-list{list-style:none;}
+  .route-list li{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+  .route-list li:last-child{border-bottom:none;}
+  .stop-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+  .stop-name{font-size:.86rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .stop-addr{font-size:.76rem;color:var(--text-sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .route-btns{display:flex;flex-direction:column;gap:10px;}
+  .btn-desc{font-size:.77rem;color:var(--text-sub);margin-top:3px;margin-left:2px;}
+  .url-box{margin-top:14px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:.71rem;color:var(--text-sub);word-break:break-all;line-height:1.5;display:none;}
+  .info-box{margin-top:16px;padding:12px 14px;background:var(--accent-light);border:1px solid #c3d5f9;border-radius:8px;font-size:.79rem;color:#1e40af;line-height:1.7;}
+
+  /* SAVE ROUTE BOX */
+  .save-route-box{background:var(--accent2-light);border:1px solid #6ee7b7;border-radius:10px;padding:16px 20px;margin-top:16px;}
+  .save-route-box h4{font-size:.88rem;font-weight:700;color:var(--accent2);margin-bottom:10px;}
+  .srb-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .srb-row input[type=date]{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:.88rem;outline:none;}
+  .srb-row input[type=text]{flex:1;min-width:140px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:.88rem;outline:none;}
+
+  /* CALENDAR */
+  .cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .cal-nav{display:flex;align-items:center;gap:10px;}
+  .cal-nav h2{font-size:1.05rem;font-weight:700;min-width:120px;text-align:center;}
+  .cal-filter{display:flex;gap:6px;flex-wrap:wrap;}
+  .filter-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:var(--white);font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .15s;}
+  .filter-btn.active{border-color:var(--accent);background:var(--accent-light);color:var(--accent);font-weight:600;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
+  .cal-dow{text-align:center;font-size:.75rem;font-weight:600;color:var(--text-sub);padding:6px 0;}
+  .cal-dow:first-child{color:#dc2626;}
+  .cal-dow:last-child{color:#2563eb;}
+  .cal-day{background:var(--white);border:1px solid var(--border);border-radius:8px;min-height:78px;padding:6px 8px;transition:border-color .15s;cursor:default;}
+  .cal-day.has-route{border-color:var(--accent);cursor:pointer;}
+  .cal-day.has-route:hover{background:var(--accent-light);}
+  .cal-day.today{border-color:var(--accent2);box-shadow:0 0 0 2px #6ee7b7;}
+  .cal-day.other-month{opacity:.35;}
+  .cal-day-num{font-size:.78rem;font-weight:600;color:var(--text-sub);margin-bottom:4px;}
+  .cal-day.has-route .cal-day-num{color:var(--accent);font-weight:700;}
+  .cal-day.today .cal-day-num{color:var(--accent2);}
+  .cal-chip{font-size:.63rem;border-radius:4px;padding:2px 5px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;}
+
+  /* ROUTE DETAIL */
+  .route-detail{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:20px;box-shadow:var(--shadow);margin-top:20px;display:none;}
+  .route-detail.open{display:block;}
+  .rd-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+  .rd-date{font-size:1rem;font-weight:700;}
+  .rd-sub{font-size:.82rem;color:var(--text-sub);margin-top:2px;}
+  .rd-entries{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+  .rd-entry{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;}
+  .rd-entry-user{font-size:.8rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .rd-entry-user .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(17,24,39,.5);display:none;align-items:center;justify-content:center;z-index:1000;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--white);border-radius:12px;padding:28px 32px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md);}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+  .modal-header h2{font-size:1rem;font-weight:700;}
+  .modal-close{background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text-sub);padding:4px;}
+  .form-group{margin-bottom:14px;}
+  .form-group label{display:block;font-size:.8rem;font-weight:500;color:var(--text-sub);margin-bottom:5px;}
+  .form-group input,.form-group textarea{width:100%;padding:9px 12px;background:var(--white);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.88rem;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+  .form-group input:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+  .form-group textarea{resize:vertical;min-height:68px;}
+  .req{color:var(--danger);}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:22px;}
+
+  @media(max-width:640px){
+    header,.content,.tabs{padding-left:16px;padding-right:16px;}
+    th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4){display:none;}
+    .cal-day{min-height:52px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loading-bar"></div>
+
+<!-- PASSWORD -->
+<div id="save-error-banner" style="display:none;position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:9999;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:12px 18px;box-shadow:0 4px 16px rgba(0,0,0,.12);max-width:420px;width:90%;font-size:.84rem;color:#991b1b;align-items:center;gap:10px;flex-wrap:wrap;">
+  <span style="font-size:1.1rem;">⚠️</span>
+  <div style="flex:1;">完了状態の保存に失敗しました。<br><span style="font-size:.78rem;">Apps Scriptの再デプロイが必要な可能性があります。<a href="#" onclick="openSetup();return false;" style="color:#1a56db;margin-left:4px;">設定を確認</a></span></div>
+  <button onclick="document.getElementById('save-error-banner').style.display='none'" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:#991b1b;padding:0 4px;">✕</button>
+</div>
+<div class="screen" id="pw-screen">
+  <div class="pw-card">
+    <div class="pw-logo">🚚</div>
+    <div class="pw-title">配送先管理システム</div>
+    <div class="pw-sub">社内限定サイトです。パスワードを入力してください。</div>
+    <input type="password" id="pw-input" placeholder="パスワード" onkeydown="if(event.key==='Enter')checkPW()">
+    <button class="btn-login" onclick="checkPW()">ログイン</button>
+    <div class="pw-error" id="pw-error">パスワードが正しくありません</div>
+  </div>
+</div>
+
+<!-- USER SELECT -->
+<div class="screen hidden" id="user-screen">
+  <div class="user-card">
+    <div class="pw-logo">👤</div>
+    <div class="user-title">担当者を選んでください</div>
+    <div class="user-sub">あなたの名前を選択してください。ルートはあなたの名前で保存されます。</div>
+    <div class="user-btns" id="user-btns"></div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
+      <button class="user-btn" style="justify-content:center;background:#fff8e1;border-color:#f59e0b;" onclick="showTodayBusiness()">
+        <span style="font-size:1.2rem">📋</span>
+        <span style="color:#92400e;font-weight:700;">業務 — 本日の配送状況</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- BUSINESS SCREEN -->
+<div class="screen hidden" id="business-screen" style="align-items:flex-start;overflow-y:auto;padding:20px;">
+  <div style="width:100%;max-width:680px;margin:0 auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:1.2rem;font-weight:700;">📋 本日の配送状況</div>
+        <div style="font-size:.85rem;color:var(--text-sub);margin-top:2px;" id="biz-date"></div>
+      </div>
+      <button class="btn btn-outline" onclick="closeBusiness()">← 戻る</button>
+    </div>
+    <div id="biz-loading" style="text-align:center;padding:48px;color:var(--text-sub);">
+      <div style="font-size:2rem;margin-bottom:10px;">🔄</div>
+      <div>読み込み中...</div>
+    </div>
+    <div id="biz-empty" style="display:none;text-align:center;padding:48px;color:var(--text-sub);">
+      <div style="font-size:2.5rem;margin-bottom:10px;">📭</div>
+      <div style="font-weight:600;color:var(--text);margin-bottom:6px;">本日の配送ルートはまだありません</div>
+      <div style="font-size:.84rem;margin-bottom:16px;">担当者がルートを保存すると表示されます</div>
+      <div style="font-size:.82rem;padding:12px 16px;background:var(--accent-light);border:1px solid #c3d5f9;border-radius:8px;color:#1e40af;text-align:left;line-height:1.7;">
+        💡 ルートを保存するには<br>
+        ① 担当者名でログイン<br>
+        ② 配送先リストでチェックを入れる<br>
+        ③ ルート生成タブで日付を選んで💾保存
+      </div>
+    </div>
+    <div id="biz-summary" style="display:none;margin-bottom:16px;padding:14px 16px;background:var(--white);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);">
+      <div style="font-size:.82rem;font-weight:700;color:var(--text-sub);margin-bottom:8px;">📊 本日の進捗</div>
+      <div id="biz-progress-bars"></div>
+    </div>
+    <div id="biz-cards"></div>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-logo">🚚 Google スプレッドシート連携設定</div>
+    <div class="setup-sub">初回のみ設定が必要です。一度設定すれば次回から自動接続されます。</div>
+    <div class="setup-step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        <a href="https://sheets.google.com" target="_blank">Google スプレッドシート</a>を新規作成。シートを2枚用意し、1枚目のシート名を <code>配送先</code>、2枚目を <code>ルート履歴</code> に変更。<br>
+        <b>配送先シート</b> 1行目：<code>id / name / addr / contact / note / tags</code><br>
+        <b>ルート履歴シート</b> 1行目：<code>id / date / user / label / stops</code>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        メニュー →「拡張機能」→「Apps Script」を開き、以下のコードを貼り付けて保存。<br>
+        <a href="#" onclick="toggleScript(event)">▶ コードを表示/非表示</a>
+        <pre id="gas-script" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:.7rem;margin-top:8px;overflow-x:auto;white-space:pre-wrap;line-height:1.5">const SHEET_DEL = '配送先';
+const SHEET_RTE = 'ルート履歴';
+
+function doGet(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const type = e.parameter.type || 'deliveries';
+  if (type === 'routes') {
+    const sheet = ss.getSheetByName(SHEET_RTE);
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0];
+    const data = rows.slice(1).filter(r => r[0]).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      try { obj.stops = JSON.parse(obj.stops); } catch(e) { obj.stops = []; }
+      return obj;
+    });
+    return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+  }
+  const sheet = ss.getSheetByName(SHEET_DEL);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const data = rows.slice(1).filter(r => r[0]).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = row[i]);
+    obj.tags = obj.tags ? String(obj.tags).split(',').map(t => t.trim()).filter(Boolean) : [];
+    return obj;
+  });
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const payload = JSON.parse(e.postData.contents);
+  if (payload.action === 'saveDeliveries') {
+    const sheet = ss.getSheetByName(SHEET_DEL);
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) sheet.deleteRows(2, lastRow - 1);
+    payload.data.forEach(d => sheet.appendRow([d.id, d.name, d.addr, d.contact||'', d.note||'', (d.tags||[]).join(',')]));
+  } else if (payload.action === 'saveRoute') {
+    const sheet = ss.getSheetByName(SHEET_RTE);
+    if (payload.update) {
+      const rows = sheet.getDataRange().getValues();
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]) === String(payload.route.id)) {
+          sheet.getRange(i+1,5).setValue(JSON.stringify(payload.route.stops));
+          break;
+        }
+      }
+    } else {
+      sheet.appendRow([payload.route.id, payload.route.date, payload.route.user, payload.route.label, JSON.stringify(payload.route.stops)]);
+    }
+  } else if (payload.action === 'deleteRoute') {
+    const sheet = ss.getSheetByName(SHEET_RTE);
+    const rows = sheet.getDataRange().getValues();
+    for (let i = rows.length - 1; i >= 1; i--) {
+      if (String(rows[i][0]) === String(payload.id)) { sheet.deleteRow(i + 1); break; }
+    }
+  }
+  return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+}</pre>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        「デプロイ」→「新しいデプロイ」→ 種類：<b>ウェブアプリ</b>、アクセス：<b>全員</b> → デプロイ。URLをコピーして以下に貼り付けてください。
+        <div style="margin-top:10px;padding:10px 12px;background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;font-size:.78rem;line-height:1.7;color:#92400e;">
+          ⚠️ <b>コードを更新した場合は「新しいデプロイ」が必要です</b><br>
+          既存のURLを再利用する場合は「デプロイを管理」→「✏️ 編集」→「バージョン：新しいバージョン」で更新してください。<br>
+          ✅ 完了チェック機能には最新版のコード（updateフラグ対応）が必要です。
+        </div>
+      </div>
+    </div>
+    <div class="setup-input-row">
+      <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/...">
+      <button class="btn btn-primary" onclick="connectGAS()">接続する</button>
+    </div>
+    <div class="setup-err" id="setup-error">URLの形式が正しくありません。</div>
+    <div class="setup-note">ℹ️ URLはブラウザのlocalStorageに保存されます。全メンバーが同じURLを設定してください。</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <header>
+    <div class="logo">🚚 配送先管理</div>
+    <div class="header-right">
+      <span class="sync-status sync-ing" id="sync-status">同期中...</span>
+      <button class="current-user" id="current-user-btn" onclick="switchUser()">
+        <span id="current-user-avatar"></span>
+        <span id="current-user-name"></span>
+        <span style="font-size:.7rem;color:var(--text-sub)">▼</span>
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="loadAll()">🔄 更新</button>
+      <button class="btn btn-outline btn-sm" onclick="resetGAS()">⚙️ 設定</button>
+      <button class="btn btn-primary" onclick="openAdd()">＋ 追加</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('list')">📋 配送先リスト</div>
+    <div class="tab" onclick="showTab('route')">🗺️ ルート生成</div>
+    <div class="tab" onclick="showTab('calendar')">📅 カレンダー</div>
+  </div>
+
+  <!-- LIST -->
+  <div class="content tab-panel active" id="tab-list">
+    <div class="stats-row">
+      <div class="stat-card"><div style="font-size:1.3rem">📦</div><div><div class="stat-val" id="stat-total">0</div><div class="stat-label">総配送先</div></div></div>
+      <div class="stat-card"><div style="font-size:1.3rem">✅</div><div><div class="stat-val" id="stat-sel">0</div><div class="stat-label">選択中</div></div></div>
+    </div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="q" placeholder="配送先・住所・タグを検索..." oninput="renderList()">
+      </div>
+      <button class="btn btn-outline" onclick="document.getElementById('q').value='';renderList()">クリア</button>
+      
+      <button class="btn btn-outline" onclick="exportCSV()">📤 エクスポート</button>
+      <label class="btn btn-outline" style="cursor:pointer;">
+        📥 インポート
+        <input type="file" accept=".csv" id="csv-import" style="display:none" onchange="importCSV(event)">
+      </label>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:44px;"></th>
+            <th>配送先 / 住所</th>
+            <th>担当者</th>
+            <th>備考</th>
+            <th>タグ</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty" class="empty-state" style="display:none">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">配送先がまだ登録されていません</div>
+        <div style="font-size:.84rem;margin-bottom:20px;">以下のいずれかの方法で配送先を追加してください</div>
+        <div style="display:flex;flex-direction:column;gap:10px;max-width:320px;margin:0 auto;text-align:left;">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+            <span style="font-size:1.4rem;">➕</span>
+            <div><div style="font-weight:600;font-size:.88rem;">手動で追加</div><div style="font-size:.78rem;color:var(--text-sub);">右上の「＋ 追加」ボタンから1件ずつ登録</div></div>
+          </div>
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+            <span style="font-size:1.4rem;">📥</span>
+            <div><div style="font-weight:600;font-size:.88rem;">CSVインポート</div><div style="font-size:.78rem;color:var(--text-sub);">ExcelをCSV保存して「📥 インポート」から一括登録</div></div>
+          </div>
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+            <span style="font-size:1.4rem;">📊</span>
+            <div><div style="font-weight:600;font-size:.88rem;">スプレッドシートに直接入力</div><div style="font-size:.78rem;color:var(--text-sub);">配送先シートに直接入力後「🔄 更新」を押す</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUTE -->
+  <div class="content tab-panel" id="tab-route">
+    <div class="route-grid">
+      <div class="panel">
+        <div class="panel-title">📍 選択した配送先 <span class="badge" id="rbadge">0</span></div>
+        <div style="font-size:.75rem;color:var(--text-sub);margin-bottom:6px;">☑️ チェックした順に番号が振られます</div>
+        <ul class="route-list" id="rlist"></ul>
+        <div id="rempty" style="color:var(--text-sub);font-size:.84rem;padding:8px 0">リストタブでチェックを入れてください</div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">🗺️ ルートアクション</div>
+        <!-- 出発地設定 -->
+        <div style="margin-bottom:14px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
+          <div style="font-size:.8rem;font-weight:600;color:var(--text-sub);margin-bottom:8px;">🚩 出発地</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <label style="display:flex;align-items:center;gap:5px;font-size:.84rem;cursor:pointer;">
+              <input type="radio" name="origin-type" value="yao" checked onchange="toggleOriginInput(this.value)" style="accent-color:var(--accent);"> 八尾営業所
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:.84rem;cursor:pointer;">
+              <input type="radio" name="origin-type" value="current" onchange="toggleOriginInput(this.value)" style="accent-color:var(--accent);"> 現在地
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:.84rem;cursor:pointer;">
+              <input type="radio" name="origin-type" value="custom" onchange="toggleOriginInput(this.value)" style="accent-color:var(--accent);"> 任意住所
+            </label>
+          </div>
+          <input type="text" id="origin-addr" placeholder="出発地の住所を入力..." style="display:none;width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Noto Sans JP',sans-serif;font-size:.85rem;outline:none;">
+        </div>
+        <div class="route-btns">
+          <div>
+            <button class="btn btn-success" style="width:100%" onclick="gMapSeq()">🗺️ この順番でルート生成</button>
+            <div class="btn-desc">左リストでチェックした番号順にルートを表示します</div>
+          </div>
+          <div>
+            <button class="btn btn-primary" style="width:100%" onclick="gMap(true)">⚡ 最短ルート自動生成</button>
+            <div class="btn-desc">Googleが最適な巡回順序を自動計算します</div>
+          </div>
+          <div>
+            <button class="btn btn-outline" style="width:100%" onclick="clearSel()">✕ 選択をクリア</button>
+          </div>
+        </div>
+        <div class="url-box" id="url-box"></div>
+        <div class="info-box">ℹ️ Google Mapsアプリ/ブラウザで開きます。<br>最短ルートはGoogleのアルゴリズムで最適化されます。</div>
+
+        <!-- SAVE ROUTE -->
+        <div class="save-route-box">
+          <h4>📅 この日のルートとして保存</h4>
+          <div class="srb-row">
+            <input type="date" id="route-date">
+            <input type="text" id="route-label" placeholder="メモ（例：午前便）">
+            <button class="btn btn-success" id="save-route-btn" onclick="saveRoute()">💾 保存</button>
+          </div>
+          <div style="font-size:.76rem;color:var(--accent2);margin-top:8px;">担当者「<span id="srb-user"></span>」のルートとして保存されます</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="content tab-panel" id="tab-calendar">
+
+    <!-- ルート履歴検索 -->
+    <div style="margin-bottom:14px;padding:14px 16px;background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);">
+      
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <input type="text" id="rs-keyword" placeholder="配送先名・ラベルで検索..." oninput="renderRouteSearch()"
+          style="flex:1;min-width:160px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:.85rem;outline:none;">
+        <select id="rs-user" onchange="renderRouteSearch()"
+          style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:.84rem;background:var(--white);outline:none;">
+          <option value="">全担当者</option>
+        </select>
+        <input type="date" id="rs-from" onchange="renderRouteSearch()"
+          style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:.84rem;outline:none;">
+        <input type="date" id="rs-to" onchange="renderRouteSearch()"
+          style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:.84rem;outline:none;">
+      </div>
+      
+    </div>
+
+    <div class="cal-top">
+      <div class="cal-nav">
+        <button class="btn btn-outline btn-sm" onclick="changeMonth(-1)">◀</button>
+        <h2 id="cal-title"></h2>
+        <button class="btn btn-outline btn-sm" onclick="changeMonth(1)">▶</button>
+        <button class="btn btn-outline btn-sm" onclick="goToday()">今月</button>
+      </div>
+      <div class="cal-filter" id="cal-filter"></div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="route-detail" id="route-detail">
+      <div class="rd-header">
+        <div>
+          <div class="rd-date" id="rd-date"></div>
+          <div class="rd-sub" id="rd-sub"></div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="closeDetail()">✕ 閉じる</button>
+      </div>
+      <div class="rd-entries" id="rd-entries"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="overlay" onclick="bgClose(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="mtitle">配送先を追加</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group"><label>配送先名 <span class="req">*</span></label><input id="f-name" placeholder="例: 株式会社○○ 倉庫"></div>
+    <div class="form-group"><label>住所 <span class="req">*</span></label><input id="f-addr" placeholder="例: 大阪府八尾市○○町1-2-3"></div>
+    <div class="form-group"><label>担当者・連絡先</label><input id="f-contact" placeholder="例: 田中様 / 06-xxxx-xxxx"></div>
+    <div class="form-group"><label>備考・メモ</label><textarea id="f-note" placeholder="例: 裏口から搬入、駐車場あり"></textarea></div>
+    <div class="form-group"><label>タグ（カンマ区切り）</label><input id="f-tags" placeholder="例: 冷蔵, 優先, 午前指定"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveDel()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const PASSWORD_HASH = '15d3822eda27c01961bc316e8b95feb3fc0b973b06797ffbd406199cd100247c';
+const GAS_KEY  = 'gas_url_v1';
+const AUTH_KEY = 'auth_ok';
+const USERS = [
+  { name:'西村', color:'#1a56db', bg:'#e8eefb' },
+  { name:'細川', color:'#057a55', bg:'#ecfdf5' },
+  { name:'宮崎', color:'#7c3aed', bg:'#ede9fe' },
+];
+
+let GAS_URL    = localStorage.getItem(GAS_KEY) || '';
+let currentUser = null;
+let deliveries  = [];
+let routes      = [];
+let sel         = new Set();
+let eid         = null;
+let calYear, calMonth;
+
+const today = new Date();
+calYear  = today.getFullYear();
+calMonth = today.getMonth();
+
+// ===== UTILS =====
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const todayStr = () => today.toISOString().slice(0,10);
+const userInfo = name => USERS.find(u => u.name === name) || {name, color:'#6b7280', bg:'#f4f6f9'};
+
+// ===== PASSWORD =====
+async function checkPW() {
+  const val = document.getElementById('pw-input').value;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
+  const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  if (hash === PASSWORD_HASH) {
+    localStorage.setItem(AUTH_KEY,'1');
+    document.getElementById('pw-screen').classList.add('hidden');
+    showUserSelect();
+  } else {
+    document.getElementById('pw-error').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+  }
+}
+
+// ===== USER SELECT =====
+function showUserSelect() {
+  const btns = document.getElementById('user-btns');
+  btns.innerHTML = USERS.map(u => `
+    <button class="user-btn" onclick="selectUser('${u.name}')">
+      <div class="user-avatar" style="background:${u.bg};color:${u.color}">${u.name[0]}</div>
+      <span>${u.name}</span>
+    </button>`).join('');
+  document.getElementById('user-screen').classList.remove('hidden');
+}
+
+function selectUser(name) {
+  currentUser = name;
+  document.getElementById('user-screen').classList.add('hidden');
+  const u = userInfo(name);
+  document.getElementById('current-user-avatar').textContent = name[0];
+  document.getElementById('current-user-avatar').style.cssText = `width:22px;height:22px;border-radius:50%;background:${u.bg};color:${u.color};display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;`;
+  document.getElementById('current-user-name').textContent = name;
+  document.getElementById('srb-user').textContent = name;
+  if (GAS_URL) startApp();
+  else document.getElementById('setup-screen').classList.add('open');
+}
+
+function switchUser() {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  showUserSelect();
+}
+
+// ===== BUSINESS SCREEN =====
+async function showTodayBusiness() {
+  document.getElementById('user-screen').classList.add('hidden');
+  document.getElementById('business-screen').classList.remove('hidden');
+
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0,10);
+  const [y,m,d] = dateStr.split('-');
+  document.getElementById('biz-date').textContent =
+    `${y}年${parseInt(m)}月${parseInt(d)}日（${'日月火水木金土'[today.getDay()]}）`;
+
+  document.getElementById('biz-loading').style.display = 'block';
+  document.getElementById('biz-empty').style.display = 'none';
+  document.getElementById('biz-summary').style.display = 'none';
+  document.getElementById('biz-cards').innerHTML = '';
+
+  if (!GAS_URL) {
+    document.getElementById('biz-loading').style.display = 'none';
+    document.getElementById('biz-empty').style.display = 'block';
+    return;
+  }
+
+  try {
+    const r = await fetch(GAS_URL + '?type=routes&t=' + Date.now()).then(r => r.json());
+    const todayRoutes = r.filter(rt => rt.date === dateStr);
+    document.getElementById('biz-loading').style.display = 'none';
+
+    if (!todayRoutes.length) {
+      document.getElementById('biz-empty').style.display = 'block';
+      return;
+    }
+
+    // 担当者ごとにグループ化
+    const byUser = {};
+    todayRoutes.forEach(rt => {
+      if (!byUser[rt.user]) byUser[rt.user] = [];
+      byUser[rt.user].push(rt);
+    });
+
+    // 進捗サマリー
+    const summary = document.getElementById('biz-summary');
+    const bars = document.getElementById('biz-progress-bars');
+    summary.style.display = 'block';
+    bars.innerHTML = Object.entries(
+      todayRoutes.reduce((acc, r) => {
+        if (!acc[r.user]) acc[r.user] = { total: 0, done: 0 };
+        (r.stops || []).forEach(s => {
+          acc[r.user].total++;
+          if (s.done) acc[r.user].done++;
+        });
+        return acc;
+      }, {})
+    ).map(([uName, stat]) => {
+      const u = userInfo(uName);
+      const pct = stat.total ? Math.round(stat.done / stat.total * 100) : 0;
+      return `<div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:.82rem;font-weight:600;color:${u.color};">${esc(uName)}</span>
+          <span style="font-size:.78rem;color:var(--text-sub);">${stat.done}/${stat.total}件完了（${pct}%）</span>
+        </div>
+        <div style="background:var(--bg);border-radius:20px;height:8px;overflow:hidden;">
+          <div style="background:${u.color};width:${pct}%;height:100%;border-radius:20px;transition:width .4s ease;"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('biz-cards').innerHTML = Object.entries(byUser).map(([userName, rts]) => {
+      const u = userInfo(userName);
+      const routeBlocks = rts.map(rt => {
+        const stops = (rt.stops || []).map((s, i) => {
+          const done = s.done === true;
+          return `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid ${u.bg};opacity:${done?'0.45':'1'};">
+            <div style="width:26px;height:26px;border-radius:50%;background:${done?'#9ca3af':u.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;">${done?'✓':(i+1)}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${done?'text-decoration:line-through;color:#9ca3af;':''}">${esc(s.name)}</div>
+              <div style="font-size:.78rem;color:var(--text-sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📍 ${esc(s.addr)}</div>
+            </div>
+            <button onclick="toggleDone('${rt.id}',${i})"
+              style="flex-shrink:0;padding:7px 10px;background:${done?'#f3f4f6':'#ecfdf5'};color:${done?'#6b7280':'#057a55'};border:1px solid ${done?'#d1d5db':'#6ee7b7'};border-radius:8px;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:600;margin-right:4px;">
+              ${done?'↩ 戻す':'✅ 完了'}
+            </button>
+            <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.addr)}&travelmode=driving','_blank')"
+              style="flex-shrink:0;padding:7px 10px;background:${u.bg};color:${u.color};border:1px solid ${u.color};border-radius:8px;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:600;">
+              🧭
+            </button>
+          </div>`;
+        }).join('');
+
+        const addrs = (rt.stops || []).map(s => s.addr);
+        let mapUrl = '';
+        if (addrs.length === 1) {
+          mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addrs[0])}&travelmode=driving`;
+        } else if (addrs.length > 1) {
+          const wp = addrs.slice(1, -1).map(a => encodeURIComponent(a)).join('|');
+          mapUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(addrs[0])}&destination=${encodeURIComponent(addrs[addrs.length-1])}&travelmode=driving${wp ? '&waypoints=' + wp : ''}`;
+        }
+
+        return `
+          <div style="margin-bottom:10px;">
+            <div style="font-size:.78rem;color:var(--text-sub);margin-bottom:6px;font-weight:500;">📌 ${esc(rt.label)}（${(rt.stops||[]).length}件）</div>
+            ${stops}
+          </div>`;
+      }).join('');
+
+      return `
+        <div style="background:var(--white);border:2px solid ${u.color};border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow);">
+          <div style="background:${u.color};padding:14px 18px;display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;">${userName[0]}</div>
+            <div>
+              <div style="color:#fff;font-weight:700;font-size:1rem;">${esc(userName)}</div>
+              <div style="color:rgba(255,255,255,.8);font-size:.78rem;">${rts.reduce((a,r)=>a+(r.stops||[]).length,0)}件の配送先</div>
+            </div>
+          </div>
+          <div style="padding:14px 16px;">
+            ${routeBlocks}
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    document.getElementById('biz-loading').style.display = 'none';
+    document.getElementById('biz-cards').innerHTML =
+      '<div style="text-align:center;padding:32px;color:var(--danger);">⚠️ データの取得に失敗しました</div>';
+  }
+}
+
+// ===== 完了チェック =====
+async function toggleDone(routeId, stopIdx) {
+  const route = routes.find(r => String(r.id) === String(routeId));
+  if (!route) return;
+  const prevDone = route.stops[stopIdx].done;
+  route.stops[stopIdx].done = !prevDone;
+  // 先にUIを更新してレスポンシブに見せる
+  refreshBusinessAndCalendar(routeId);
+  try {
+    const res = await apiPost({ action: 'saveRoute', route, update: true });
+    if (!res || !res.ok) throw new Error('save failed');
+  } catch(e) {
+    // 失敗時は元に戻す
+    route.stops[stopIdx].done = prevDone;
+    refreshBusinessAndCalendar(routeId);
+    // エラーバナーを表示
+    showSaveError();
+  }
+  refreshBusinessAndCalendar(routeId);
+}
+
+function showSaveError() {
+  var banner = document.getElementById('save-error-banner');
+  banner.style.display = 'flex';
+  // 5秒後に自動で消す
+  clearTimeout(banner._timer);
+  banner._timer = setTimeout(function(){ banner.style.display = 'none'; }, 5000);
+}
+
+function refreshBusinessAndCalendar(routeId) {
+  // 業務画面が開いていれば再描画
+  const bizScreen = document.getElementById('business-screen');
+  if (bizScreen && !bizScreen.classList.contains('hidden')) {
+    showTodayBusiness();
+  }
+  // カレンダー詳細が開いていれば再描画
+  const detail = document.getElementById('route-detail');
+  if (detail && detail.classList.contains('open')) {
+    const dateEl = document.getElementById('rd-date');
+    if (dateEl) {
+      const txt = dateEl.textContent;
+      const m = txt.match(/(\d+)年(\d+)月(\d+)日/);
+      if (m) {
+        const dateStr = m[1] + '-' + String(m[2]).padStart(2,'0') + '-' + String(m[3]).padStart(2,'0');
+        showDetail(dateStr);
+      }
+    }
+  }
+}
+
+function closeBusiness() {
+  document.getElementById('business-screen').classList.add('hidden');
+  document.getElementById('user-screen').classList.remove('hidden');
+}
+
+// ===== SETUP =====
+function toggleScript(e) {
+  e.preventDefault();
+  const el = document.getElementById('gas-script');
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+function connectGAS() {
+  const url = document.getElementById('gas-url').value.trim();
+  if (!url.startsWith('https://script.google.com/macros/s/')) {
+    document.getElementById('setup-error').style.display='block'; return;
+  }
+  document.getElementById('setup-error').style.display='none';
+  GAS_URL = url;
+  localStorage.setItem(GAS_KEY, GAS_URL);
+  document.getElementById('setup-screen').classList.remove('open');
+  startApp();
+}
+function resetGAS() {
+  if (!confirm('接続URLをリセットしますか？')) return;
+  localStorage.removeItem(GAS_KEY);
+  location.reload();
+}
+function startApp() {
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('route-date').value = todayStr();
+  loadAll();
+}
+
+// ===== API =====
+function setLoading(on) { document.getElementById('loading-bar').classList.toggle('active', on); }
+function setSyncStatus(cls, msg) {
+  const el = document.getElementById('sync-status');
+  el.className = 'sync-status ' + cls;
+  el.textContent = msg;
+}
+async function loadAll() {
+  setLoading(true); setSyncStatus('sync-ing','同期中...');
+  try {
+    const [d, r] = await Promise.all([
+      fetch(GAS_URL+'?t='+Date.now()).then(r=>r.json()),
+      fetch(GAS_URL+'?type=routes&t='+Date.now()).then(r=>r.json())
+    ]);
+    deliveries = d; routes = r;
+        setSyncStatus('sync-ok','✓ 同期済み');
+  } catch(e) {
+    setSyncStatus('sync-err','⚠ 接続エラー'); console.error(e);
+  }
+  setLoading(false);
+  renderList(); renderRoute(); renderCalendar();
+}
+async function apiPost(body) {
+  setLoading(true); setSyncStatus('sync-ing','保存中...');
+  try {
+    await fetch(GAS_URL,{method:'POST',body:JSON.stringify(body)});
+    setSyncStatus('sync-ok','✓ 保存済み');
+  } catch(e) {
+    setSyncStatus('sync-err','⚠ 保存エラー');
+    alert('保存に失敗しました。'); console.error(e);
+  }
+  setLoading(false);
+}
+
+// ===== TABS =====
+function showTab(t) {
+  const tabs = ['list','route','calendar'];
+  document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', tabs[i]===t));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='route') renderRoute();
+  if(t==='calendar') renderCalendar();
+}
+
+// ===== LIST =====
+// ===== SORT & FREQUENCY =====
+const FREQ_KEY = 'sel_freq_v1';
+
+function getFreq() {
+  try { return JSON.parse(localStorage.getItem(FREQ_KEY) || '{}'); } catch(e) { return {}; }
+}
+function incFreq(id) {
+  const f = getFreq();
+  f[sid(id)] = (f[sid(id)] || 0) + 1;
+  localStorage.setItem(FREQ_KEY, JSON.stringify(f));
+}
+function getSortedDeliveries(rows) {
+  return [...rows];
+}
+
+function sid(id){ return String(id); }
+
+function renderList() {
+  const q = (document.getElementById('q')||{value:''}).value.toLowerCase().trim();
+  const filtered = deliveries.filter(d =>
+    (d.name||'').toLowerCase().includes(q)||(d.addr||'').toLowerCase().includes(q)||
+    (d.contact||'').toLowerCase().includes(q)||(d.tags||[]).join(' ').toLowerCase().includes(q)
+  );
+  const rows = getSortedDeliveries(filtered);
+  document.getElementById('empty').style.display = rows.length?'none':'block';
+  document.getElementById('tbody').innerHTML = rows.map(d=>`
+    <tr class="${sel.has(sid(d.id))?'row-selected':''}">
+      <td class="chk-cell" style="text-align:center;vertical-align:middle;">
+        <input type="checkbox" ${sel.has(sid(d.id))?'checked':''} onchange="chk('${sid(d.id)}',this)" onclick="event.stopPropagation()">
+      </td>
+      <td class="name-cell">
+        <!-- PC用：名前＋住所そのまま表示 -->
+        <div class="pc-only">
+          <div class="cell-name">${esc(d.name)}</div>
+          <div class="cell-sub">📍 ${esc(d.addr)}</div>
+        </div>
+        <!-- モバイル用：名前タップで詳細展開 -->
+        <div class="mobile-only">
+          <div onclick="toggleCard('${sid(d.id)}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0;">
+            <span class="cell-name" style="margin:0;">${esc(d.name)}</span>
+            <span id="caret-${sid(d.id)}" style="font-size:.75rem;color:var(--text-sub);flex-shrink:0;transition:transform .2s;">▼</span>
+          </div>
+          <div class="mobile-detail" id="detail-${sid(d.id)}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+            <div class="cell-sub" style="margin-bottom:5px;">📍 ${esc(d.addr)}</div>
+            ${d.contact?`<div class="cell-sub" style="margin-bottom:5px;">👤 ${esc(d.contact)}</div>`:''}
+            ${d.note?`<div class="cell-sub" style="margin-bottom:5px;">📝 ${esc(d.note)}</div>`:''}
+            ${renderTagsDiv(d.tags)}
+            <div class="actions-cell">
+              <button class="btn btn-outline btn-sm" onclick="gSearch('${encodeURIComponent(d.addr)}')">🗺️ マップ</button>
+              <button class="btn btn-map btn-sm" onclick="gNav('${encodeURIComponent(d.addr)}')">🧭 ナビ</button>
+              <button class="btn btn-outline btn-sm" onclick="openEdit('${sid(d.id)}')">✏️</button>
+              <button class="btn btn-danger btn-sm" onclick="delDel('${sid(d.id)}')">🗑️</button>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td class="cell-sub pc-only">${esc(d.contact||'—')}</td>
+      <td class="pc-only"><div class="cell-note" title="${esc(d.note||'')}">${esc(d.note||'—')}</div></td>
+      <td class="pc-only">${renderTagsCell(d.tags)}</td>
+      <td class="pc-only"><div class="actions-cell">
+        <button class="btn btn-outline btn-sm" onclick="gSearch('${encodeURIComponent(d.addr)}')">🗺️ マップ</button>
+        <button class="btn btn-map btn-sm" onclick="gNav('${encodeURIComponent(d.addr)}')">🧭 ナビ</button>
+        <button class="btn btn-outline btn-sm" onclick="openEdit('${sid(d.id)}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="delDel('${sid(d.id)}')">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+  const n=deliveries.length,s=sel.size;
+  document.getElementById('stat-total').textContent=n;
+  document.getElementById('stat-sel').textContent=s;
+}
+function chk(id,el){
+  const key=sid(id);
+  if (el.checked) {
+    sel.add(key);
+    incFreq(key);
+    if (!routeOrder.includes(key)) routeOrder.push(key);
+  } else {
+    sel.delete(key);
+    routeOrder = routeOrder.filter(function(k){ return k !== key; });
+  }
+  renderList();
+  renderRoute();
+}
+function clearSel(){sel.clear();routeOrder=[];routeSeq=[];renderList();renderRoute();}
+
+function toggleCard(id) {
+  const detail = document.getElementById('detail-' + id);
+  const caret  = document.getElementById('caret-'  + id);
+  if (!detail) return;
+  const open = detail.style.display === 'none';
+  detail.style.display = open ? 'block' : 'none';
+  if (caret) caret.textContent = open ? '▲' : '▼';
+}
+
+// ===== MAPS =====
+function gSearch(a){window.open(`https://www.google.com/maps/search/?api=1&query=${a}`,'_blank');}
+function gNav(a){window.open(`https://www.google.com/maps/dir/?api=1&destination=${a}&travelmode=driving`,'_blank');}
+function toggleOriginInput(val) {
+  document.getElementById('origin-addr').style.display = val === 'custom' ? 'block' : 'none';
+}
+
+async function getOrigin() {
+  const type = document.querySelector('input[name="origin-type"]:checked').value;
+  if (type === 'current') {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) { alert('現在地が取得できません'); resolve(null); return; }
+      navigator.geolocation.getCurrentPosition(
+        pos => resolve(`${pos.coords.latitude},${pos.coords.longitude}`),
+        () => { alert('現在地の取得に失敗しました。位置情報の許可を確認してください。'); resolve(null); }
+      );
+    });
+  } else if (type === 'yao') {
+    return Promise.resolve('グリーン株式会社 八尾営業所 〒581-0027 大阪府八尾市八尾木1丁目221番地');
+  } else if (type === 'custom') {
+    const addr = document.getElementById('origin-addr').value.trim();
+    if (!addr) { alert('出発地の住所を入力してください'); return null; }
+    return addr;
+  }
+  return Promise.resolve(null);
+}
+
+async function gMapSeq(){
+  if(!routeSeq.length){alert('左のリストでチェックを入れてください');return;}
+  const idMap = {};
+  deliveries.forEach(function(d){ idMap[sid(d.id)] = d; });
+  const items = routeSeq.map(function(id){ return idMap[id]; }).filter(Boolean);
+  if(!items.length){alert('配送先が見つかりません');return;}
+  const originOverride = await getOrigin();
+  if(originOverride === undefined) return;
+  var url;
+  if(items.length === 1 && !originOverride){
+    url = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(items[0].addr) + '&travelmode=driving';
+  } else {
+    var o = originOverride ? encodeURIComponent(originOverride) : encodeURIComponent(items[0].addr);
+    var allItems = originOverride ? items : items.slice(1);
+    var dst = encodeURIComponent(allItems[allItems.length-1].addr);
+    var mid = allItems.slice(0,-1).map(function(d){ return encodeURIComponent(d.addr); });
+    var wp = mid.length ? mid.join('|') : '';
+    url = 'https://www.google.com/maps/dir/?api=1&origin=' + o + '&destination=' + dst + '&travelmode=driving' + (wp ? '&waypoints=' + wp : '');
+  }
+  var box = document.getElementById('url-box');
+  box.style.display='block'; box.textContent=url;
+  window.open(url,'_blank');
+}
+
+async function gMap(opt){
+  // routeOrderの順番でitemsを構築
+  const idMap = {};
+  deliveries.forEach(function(d){ idMap[sid(d.id)] = d; });
+  routeOrder = routeOrder.filter(function(id){ return sel.has(id); });
+  const items = routeOrder.map(function(id){ return idMap[id]; }).filter(Boolean);
+  if(!items.length){alert('配送先を選択してください');return;}
+  const originOverride = await getOrigin();
+  if (originOverride === undefined) return;
+  let url;
+  if (items.length === 1 && !originOverride) {
+    url = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(items[0].addr) + '&travelmode=driving';
+  } else {
+    const o = originOverride ? encodeURIComponent(originOverride) : encodeURIComponent(items[0].addr);
+    const allItems = originOverride ? items : items.slice(1);
+    const dst = encodeURIComponent(allItems[allItems.length-1].addr);
+    const mid = allItems.slice(0,-1).map(function(d){ return encodeURIComponent(d.addr); });
+    const wp = opt ? ('optimize:true|' + mid.join('|')) : mid.join('|');
+    url = 'https://www.google.com/maps/dir/?api=1&origin=' + o + '&destination=' + dst + '&travelmode=driving' + (mid.length ? '&waypoints=' + wp : '');
+  }
+  const box=document.getElementById('url-box');
+  box.style.display='block';box.textContent=url;
+  window.open(url,'_blank');
+}
+
+// ===== ROUTE PANEL =====
+// ===== 選択順管理 =====
+let routeOrder = [];
+let routeSeq = []; // ルートタブ専用：チェックした順番管理
+
+function renderTagsDiv(tags) {
+  if (!tags || !tags.length) return '';
+  return '<div style="margin-bottom:8px;">' + tags.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>';
+}
+function renderTagsCell(tags) {
+  if (!tags || !tags.length) return '—';
+  return tags.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('');
+} // チェックした順にidを格納
+
+function renderRoute(){
+  routeOrder = routeOrder.filter(function(id){ return sel.has(id); });
+  routeSeq = routeSeq.filter(function(id){ return sel.has(id); });
+  const idMap = {};
+  deliveries.forEach(function(d){ idMap[sid(d.id)] = d; });
+  const items = routeOrder.map(function(id){ return idMap[id]; }).filter(Boolean);
+  document.getElementById('rbadge').textContent = items.length;
+  document.getElementById('rempty').style.display = items.length ? 'none' : 'block';
+  document.getElementById('rlist').innerHTML = items.map(function(d){
+    var id = sid(d.id);
+    var seqIdx = routeSeq.indexOf(id);
+    var checked = seqIdx >= 0;
+    var badge = checked
+      ? '<div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0;">' + (seqIdx+1) + '</div>'
+      : '<div style="width:24px;height:24px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.7rem;color:var(--text-sub);">—</div>';
+    return '<li style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);">'
+      + '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="toggleSeq(\'' + id + '\',this)" style="width:16px;height:16px;flex-shrink:0;accent-color:var(--accent);">'
+      + badge
+      + '<div style="flex:1;overflow:hidden;">'
+      + '<div style="font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(d.name) + '</div>'
+      + '<div style="font-size:.78rem;color:var(--text-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(d.addr) + '</div>'
+      + '</div>'
+      + '<button class="btn btn-danger btn-sm" onclick="removeStop(\'' + id + '\')">✕</button>'
+      + '</li>';
+  }).join('');
+}
+
+function toggleSeq(id, el) {
+  if (el.checked) {
+    if (!routeSeq.includes(id)) routeSeq.push(id);
+  } else {
+    routeSeq = routeSeq.filter(function(k){ return k !== id; });
+  }
+  renderRoute();
+}
+
+
+function removeStop(id) {
+  sel.delete(id);
+  routeOrder = routeOrder.filter(function(k){ return k !== id; });
+  routeSeq = routeSeq.filter(function(k){ return k !== id; });
+  renderList();
+  renderRoute();
+}
+
+
+// ===== SAVE ROUTE =====
+async function saveRoute(){
+  routeOrder = routeOrder.filter(function(id){ return sel.has(id); });
+  const idMap = {};
+  deliveries.forEach(function(d){ idMap[sid(d.id)] = d; });
+  const items = routeOrder.map(function(id){ return idMap[id]; }).filter(Boolean);
+  if(!items.length){alert('配送先を選択してください');return;}
+  const date=document.getElementById('route-date').value;
+  if(!date){alert('日付を選択してください');return;}
+  const label=document.getElementById('route-label').value.trim();
+  const route={
+    id: Date.now(),
+    date, user: currentUser,
+    label: label||'配送ルート',
+    stops: items.map(d=>({id:d.id,name:d.name,addr:d.addr}))
+  };
+  const btn=document.getElementById('save-route-btn');
+  btn.disabled=true;btn.textContent='保存中...';
+  await apiPost({action:'saveRoute',route});
+  routes.push(route);
+  btn.disabled=false;btn.textContent='💾 保存';
+  alert('✅ ' + date + ' の' + currentUser + 'のルートを保存しました');
+  sel.clear();
+  renderList();
+  renderRoute();
+  renderCalendar();
+}
+
+// ===== ROUTE SEARCH =====
+
+
+
+
+// ===== CALENDAR =====
+let calFilter = '全員';
+function renderCalendar(){
+  const title=`${calYear}年 ${calMonth+1}月`;
+  document.getElementById('cal-title').textContent=title;
+
+  // フィルターボタン
+  const filters=['全員',...USERS.map(u=>u.name)];
+  document.getElementById('cal-filter').innerHTML=filters.map(f=>`
+    <button class="filter-btn ${calFilter===f?'active':''}" onclick="setCalFilter('${f}')">${f}</button>`).join('');
+
+  const grid=document.getElementById('cal-grid');
+  const dows=['日','月','火','水','木','金','土'];
+  const dowHTML=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+
+  const first=new Date(calYear,calMonth,1);
+  const last=new Date(calYear,calMonth+1,0);
+  const startDay=first.getDay();
+  const todayFull=today.toISOString().slice(0,10);
+
+  let days='';
+  // 前月の空白
+  for(let i=0;i<startDay;i++){
+    const d=new Date(calYear,calMonth,1-startDay+i);
+    days+=`<div class="cal-day other-month"><div class="cal-day-num">${d.getDate()}</div></div>`;
+  }
+  // 当月
+  for(let d=1;d<=last.getDate();d++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayRoutes=routes.filter(r=>r.date===dateStr&&(calFilter==='全員'||r.user===calFilter));
+    const isToday=dateStr===todayFull;
+    const hasRoute=dayRoutes.length>0;
+    const chips=dayRoutes.map(r=>{
+      const u=userInfo(r.user);
+      return `<div class="cal-chip" style="background:${u.color}">${r.user}：${esc(r.label)}</div>`;
+    }).join('');
+    var clickAttr = hasRoute ? ('onclick="showDetail(\'' + dateStr + '\')"') : '';
+    days += '<div class="cal-day ' + (hasRoute ? 'has-route' : '') + ' ' + (isToday ? 'today' : '') + '" ' + clickAttr + '><div class="cal-day-num">' + d + '</div>' + chips + '</div>';
+  }
+  // 翌月の空白
+  const remain=(7-((startDay+last.getDate())%7))%7;
+  for(let i=1;i<=remain;i++){
+    days+=`<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`;
+  }
+  grid.innerHTML=dowHTML+days;
+}
+function setCalFilter(f){calFilter=f;renderCalendar();}
+function changeMonth(d){
+  calMonth+=d;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderCalendar();closeDetail();
+}
+function goToday(){calYear=today.getFullYear();calMonth=today.getMonth();renderCalendar();closeDetail();}
+
+function showDetail(dateStr){
+  const dayRoutes=routes.filter(r=>r.date===dateStr&&(calFilter==='全員'||r.user===calFilter));
+  const [y,m,d]=dateStr.split('-');
+  document.getElementById('rd-date').textContent=`${y}年${parseInt(m)}月${parseInt(d)}日`;
+  document.getElementById('rd-sub').textContent=`${dayRoutes.length}件のルート`;
+  document.getElementById('rd-entries').innerHTML=dayRoutes.map(r=>{
+    const u=userInfo(r.user);
+    const stops=(r.stops||[]).map((s,i)=>{
+      const done = s.done === true;
+      return `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:.83rem;opacity:${done?'0.45':'1'};">
+        <div class="stop-num" style="background:${done?'#9ca3af':u.color};width:20px;height:20px;font-size:.65rem">${done?'✓':(i+1)}</div>
+        <div style="flex:1"><div style="font-weight:500;${done?'text-decoration:line-through;color:#9ca3af;':''}">${esc(s.name)}</div><div style="font-size:.75rem;color:var(--text-sub)">${esc(s.addr)}</div></div>
+        <button onclick="toggleDone('${r.id}',${i})" style="padding:4px 8px;background:${done?'#f3f4f6':'#ecfdf5'};color:${done?'#6b7280':'#057a55'};border:1px solid ${done?'#d1d5db':'#6ee7b7'};border-radius:6px;font-size:.72rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">${done?'↩':'✅'}</button>
+        <button class="btn btn-map btn-sm" onclick="gNav('${encodeURIComponent(s.addr)}')">🧭</button>
+      </div>`;
+    }).join('');
+    return `<div class="rd-entry">
+      <div class="rd-entry-user">
+        <div class="dot" style="background:${u.color}"></div>
+        <span style="color:${u.color}">${esc(r.user)}</span>
+        <span style="color:var(--text-sub);font-weight:400">— ${esc(r.label)}</span>
+        <button class="btn btn-danger btn-sm" style="margin-left:auto;font-size:.7rem" onclick="deleteRoute('${r.id}')">削除</button>
+      </div>
+      <div>${stops}</div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="replayRoute(${JSON.stringify((r.stops||[]).map(s=>s.addr)).replace(/"/g,'&quot;')},false)">🗺️ 地図表示</button>
+        <button class="btn btn-map btn-sm" onclick="replayRoute(${JSON.stringify((r.stops||[]).map(s=>s.addr)).replace(/"/g,'&quot;')},true)">⚡ ナビ開始</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('route-detail').classList.add('open');
+  document.getElementById('route-detail').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function closeDetail(){document.getElementById('route-detail').classList.remove('open');}
+
+async function deleteRoute(id){
+  if(!confirm('このルートを削除しますか？'))return;
+  await apiPost({action:'deleteRoute',id});
+  routes=routes.filter(r=>String(r.id)!==String(id));
+  renderCalendar();closeDetail();
+}
+
+function replayRoute(addrs,nav){
+  if(!addrs||!addrs.length)return;
+  let url;
+  if(addrs.length===1){
+    url=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addrs[0])}&travelmode=driving`;
+  } else {
+    const o=encodeURIComponent(addrs[0]),dst=encodeURIComponent(addrs[addrs.length-1]);
+    const mid=addrs.slice(1,-1).map(a=>encodeURIComponent(a));
+    url=`https://www.google.com/maps/dir/?api=1&origin=${o}&destination=${dst}&travelmode=driving${mid.length?'&waypoints='+mid.join('|'):''}`;
+  }
+  window.open(url,'_blank');
+}
+
+// ===== CRUD (deliveries) =====
+function openAdd(){
+  eid=null;
+  document.getElementById('mtitle').textContent='配送先を追加';
+  ['name','addr','contact','note','tags'].forEach(f=>document.getElementById('f-'+f).value='');
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('f-name').focus(),80);
+}
+function openEdit(id){
+  eid=id;
+  const d=deliveries.find(x=>String(x.id)===String(id));
+  if(!d)return;
+  document.getElementById('mtitle').textContent='配送先を編集';
+  document.getElementById('f-name').value=d.name;
+  document.getElementById('f-addr').value=d.addr;
+  document.getElementById('f-contact').value=d.contact||'';
+  document.getElementById('f-note').value=d.note||'';
+  document.getElementById('f-tags').value=(d.tags||[]).join(', ');
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open');}
+function bgClose(e){if(e.target===document.getElementById('overlay'))closeModal();}
+
+async function saveDel(){
+  const name=document.getElementById('f-name').value.trim();
+  const addr=document.getElementById('f-addr').value.trim();
+  if(!name){document.getElementById('f-name').focus();return;}
+  if(!addr){document.getElementById('f-addr').focus();return;}
+  const d={name,addr,
+    contact:document.getElementById('f-contact').value.trim(),
+    note:document.getElementById('f-note').value.trim(),
+    tags:document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean)
+  };
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true;btn.textContent='保存中...';
+  if(eid){const i=deliveries.findIndex(x=>String(x.id)===String(eid));deliveries[i]={...deliveries[i],...d};}
+  else{d.id=Date.now();deliveries.push(d);}
+  await apiPost({action:'saveDeliveries',data:deliveries});
+  btn.disabled=false;btn.textContent='保存';
+  closeModal();renderList();
+}
+async function delDel(id){
+  if(!confirm('この配送先を削除しますか？'))return;
+  deliveries=deliveries.filter(d=>String(d.id)!==String(id));
+  sel.delete(sid(id));
+  await apiPost({action:'saveDeliveries',data:deliveries});
+  renderList();
+}
+
+// ===== CSV EXPORT =====
+function exportCSV() {
+  if (!deliveries.length) { alert('エクスポートするデータがありません'); return; }
+  const header = ['id','name','addr','contact','note','tags'];
+  const rows = deliveries.map(function(d) {
+    return [
+      d.id,
+      d.name || '',
+      d.addr || '',
+      d.contact || '',
+      d.note || '',
+      (d.tags || []).join('/')
+    ].map(function(v) {
+      return '"' + String(v).replace(/"/g, '""') + '"';
+    }).join(',');
+  });
+  var bom = '\uFEFF';
+  var csv = bom + [header.join(',')].concat(rows).join('\r\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var date = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = '配送先_' + date + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importCSV(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      var text = e.target.result;
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+      if (lines.length < 2) { alert('データが見つかりません'); return; }
+
+      var headers = parseCSVLine(lines[0]).map(function(h){ return h.toLowerCase().trim(); });
+      var nameIdx    = headers.findIndex(function(h){ return h.includes('name') || h.includes('名前') || h.includes('配送先'); });
+      var addrIdx    = headers.findIndex(function(h){ return h.includes('addr') || h.includes('住所'); });
+      var contactIdx = headers.findIndex(function(h){ return h.includes('contact') || h.includes('担当') || h.includes('連絡'); });
+      var noteIdx    = headers.findIndex(function(h){ return h.includes('note') || h.includes('備考') || h.includes('メモ'); });
+      var tagsIdx    = headers.findIndex(function(h){ return h.includes('tags') || h.includes('tag') || h.includes('タグ'); });
+
+      if (nameIdx === -1 || addrIdx === -1) {
+        alert('CSVのヘッダーにnameとaddrが必要です。\n例：id,name,addr,contact,note,tags');
+        return;
+      }
+
+      var imported = lines.slice(1).map(function(line) {
+        var cols = parseCSVLine(line);
+        return {
+          id: Date.now() + Math.random(),
+          name:    cols[nameIdx]    || '',
+          addr:    cols[addrIdx]    || '',
+          contact: contactIdx >= 0 ? (cols[contactIdx] || '') : '',
+          note:    noteIdx    >= 0 ? (cols[noteIdx]    || '') : '',
+          tags:    tagsIdx    >= 0 ? (cols[tagsIdx] || '').split(/[,\/]/).map(function(t){ return t.trim(); }).filter(Boolean) : []
+        };
+      }).filter(function(d){ return d.name && d.addr; });
+
+      if (!imported.length) { alert('有効なデータが見つかりませんでした'); return; }
+
+      var mode = confirm(imported.length + '件のデータが見つかりました。\n\nOK → 既存データに追加\nキャンセル → 既存データを置き換え');
+
+      if (mode) {
+        deliveries = deliveries.concat(imported);
+      } else {
+        if (!confirm('既存の配送先データをすべて削除して置き換えます。よろしいですか？')) return;
+        deliveries = imported;
+      }
+
+      await apiPost({ action: 'saveDeliveries', data: deliveries });
+      renderList();
+      alert('✅ ' + imported.length + '件をインポートしました');
+    } catch(err) {
+      alert('読み込みに失敗しました。ファイル形式を確認してください。');
+      console.error(err);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSVLine(line) {
+  var result = [];
+  var cur = '', inQuote = false;
+  for (var i = 0; i < line.length; i++) {
+    var c = line[i];
+    if (inQuote) {
+      if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+      else if (c === '"') { inQuote = false; }
+      else { cur += c; }
+    } else {
+      if (c === '"') { inQuote = true; }
+      else if (c === ',') { result.push(cur.trim()); cur = ''; }
+      else { cur += c; }
+    }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+// ===== INIT =====
+if(localStorage.getItem(AUTH_KEY)==='1'){
+  document.getElementById('pw-screen').classList.add('hidden');
+  showUserSelect();
+}
+</script>
+</body>
+</html>
+<!-- MOBILE STYLES INJECTED -->
+<style>
+@media (max-width: 640px) {
+  #sort-select { width: 100%; }
+  /* ルート検索フォームのモバイル対応 */
+  #rs-keyword { width: 100%; min-width: unset; }
+  #rs-user, #rs-from, #rs-to { flex: 1; min-width: 0; font-size: .8rem; padding: 8px 6px; }
+
+  /* ヘッダー：コンパクト化 */
+  header {
+    padding: 0 12px;
+    height: 52px;
+  }
+  .logo span { display: none; } /* テキスト非表示、アイコンだけ */
+  .header-right { gap: 6px; }
+  .sync-status { display: none; } /* 同期ステータスは省略 */
+  .current-user { padding: 5px 10px; font-size: .8rem; }
+  header .btn-outline.btn-sm:nth-child(3) { display: none; } /* 更新ボタン省略 */
+
+  /* タブ → 下部固定ナビゲーション */
+  .tabs {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    top: auto;
+    z-index: 200;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    padding: 0;
+    display: flex;
+    box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 4px 8px;
+    font-size: .7rem;
+    text-align: center;
+    border-bottom: none;
+    border-top: 3px solid transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .tab.active {
+    border-top-color: var(--accent);
+    border-bottom: none;
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  /* コンテンツ：下部ナビの高さ分パディング */
+  .content {
+    padding: 16px 12px 80px;
+  }
+
+  /* テーブル → カード形式 */
+  .table-wrap { border: none; background: transparent; box-shadow: none; }
+  table, thead, tbody, th, td, tr { display: block; }
+  thead { display: none; }
+  #tbody tr {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  #tbody tr.row-selected { background: var(--accent-light); border-color: var(--accent); }
+  #tbody td { padding: 0; border: none; }
+
+  /* チェックボックス */
+  #tbody td:nth-child(1) {
+    position: absolute;
+    top: 14px; right: 14px;
+  }
+  #tbody td:nth-child(1) input[type=checkbox] {
+    width: 20px; height: 20px;
+  }
+
+  /* モバイル：pc-only非表示・mobile-only表示 */
+  .pc-only { display: none !important; }
+  .mobile-only { display: block; }
+  .cell-name { font-size: .95rem; }
+  .cell-sub { font-size: .82rem; }
+
+  /* チェックボックスセル */
+  #tbody td.chk-cell {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: auto;
+  }
+  #tbody td.chk-cell input[type=checkbox] {
+    width: 22px; height: 22px;
+  }
+
+  /* 名前セルは右にチェックボックス分の余白 */
+  #tbody td.name-cell { padding-right: 40px; }
+
+  /* 折りたたみアニメーション */
+  .mobile-detail { animation: fadeIn .15s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+
+  /* アクションボタン：大きくタップしやすく */
+  .actions-cell { margin-top: 8px; gap: 6px; }
+  .actions-cell .btn-sm { padding: 9px 12px; font-size: .82rem; flex: 1; }
+
+  /* 統計カード */
+  .stats-row { gap: 8px; }
+  .stat-card { padding: 12px 14px; flex: 1; min-width: 0; }
+  .stat-val { font-size: 1.3rem; }
+
+  /* 検索バー */
+  .search-wrap input { padding: 11px 12px 11px 36px; font-size: .92rem; }
+  .toolbar { gap: 8px; }
+
+  /* ルートタブ */
+  .route-grid { gap: 12px; }
+  .panel { padding: 14px; }
+  .save-route-box { padding: 14px; }
+  .srb-row { flex-direction: column; align-items: stretch; }
+  .srb-row input[type=date],
+  .srb-row input[type=text] { width: 100%; padding: 10px 12px; font-size: .9rem; }
+  .srb-row .btn { width: 100%; padding: 12px; font-size: .9rem; justify-content: center; }
+
+  .route-btns .btn { padding: 13px 16px; font-size: .88rem; }
+
+  /* カレンダー */
+  .cal-top { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .cal-filter { gap: 4px; }
+  .filter-btn { padding: 5px 10px; font-size: .75rem; }
+  .cal-day { min-height: 52px; padding: 4px 5px; border-radius: 6px; }
+  .cal-day-num { font-size: .72rem; }
+  .cal-chip { font-size: .58rem; padding: 1px 3px; }
+  .cal-dow { font-size: .7rem; padding: 4px 0; }
+
+  /* ルート詳細 */
+  .rd-entries { grid-template-columns: 1fr; }
+  .rd-entry { padding: 12px; }
+
+  /* モーダル：下からスライドアップ */
+  .modal-overlay { align-items: flex-end; }
+  .modal {
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 32px;
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+  }
+  .form-group input,
+  .form-group textarea {
+    padding: 12px;
+    font-size: .92rem;
+  }
+  .modal-actions .btn { padding: 12px 20px; font-size: .9rem; }
+
+  /* ＋追加ボタン：FAB風 */
+  header .btn-primary {
+    position: fixed;
+    bottom: 74px;
+    right: 16px;
+    z-index: 300;
+    border-radius: 50px;
+    padding: 13px 20px;
+    font-size: .88rem;
+    box-shadow: 0 4px 16px rgba(26,86,219,.35);
+  }
+}
+</style>
