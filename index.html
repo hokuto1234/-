@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>エクステリア メーカー カタログ・規格表・補修部品 一覧</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f2ed;
+    --card: #fff;
+    --hdr2: #34495e;
+    --txt: #2c3e50;
+    --txt2: #7f8c8d;
+    --bdr: #e8e5e0;
+    --hover: #fdf6f0;
+    --cat: #2980b9; --cat-bg: #ebf5fb;
+    --spec: #27ae60; --spec-bg: #eafaf1;
+    --parts: #8e44ad; --parts-bg: #f5eef8;
+    --sim: #e67e22; --sim-bg: #fef5e7;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--txt);
+    -webkit-font-smoothing: antialiased;
+  }
+  .hdr {
+    background: linear-gradient(135deg, #2c3e50, #34495e, #2c3e50);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 0.3rem 1rem;
+    flex-wrap: wrap;
+  }
+  .hdr h1 { font-size:0.85rem; font-weight:700; letter-spacing:0.08em; }
+  .hdr .lg { display:flex; gap:0.7rem; align-items:center; }
+  .hdr .lg span { font-size:0.6rem; color:rgba(255,255,255,0.65); }
+
+  .wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.0rem 0.8rem 0.4rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 6px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+    overflow: hidden;
+  }
+
+  table { width:100%; border-collapse:collapse; font-size:0.72rem; line-height:1.45; }
+
+  thead th {
+    background: var(--hdr2);
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.68rem;
+    padding: 0.4rem 0.5rem;
+    letter-spacing: 0.04em;
+    text-align: left;
+    white-space: nowrap;
+    position: sticky; top: 0;
+  }
+  thead th:first-child { padding-left:0.7rem; }
+  thead th:last-child { text-align: center; }
+
+  tbody tr { border-bottom: 1px solid #f0eeea; transition: background 0.15s; }
+  tbody tr:hover { background: var(--hover); }
+  tbody tr:last-child { border-bottom: none; }
+
+  td { padding: 0.3rem 0.5rem; vertical-align: middle; }
+
+  .mk { font-weight:600; font-size:0.73rem; white-space:nowrap; padding-left:0.7rem; }
+
+  .t {
+    display:inline-block;
+    font-size:0.6rem; font-weight:500;
+    padding:0.1rem 0.4rem; border-radius:3px;
+    white-space:nowrap;
+    min-width: 5.8em;
+    text-align: center;
+  }
+  .t-c { background:var(--cat-bg); color:var(--cat); }
+  .t-s { background:var(--spec-bg); color:var(--spec); }
+  .t-p { background:var(--parts-bg); color:var(--parts); }
+  .t-m { background:var(--sim-bg); color:var(--sim); }
+
+  td a {
+    color: var(--txt);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--txt2);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  td a:hover { color: var(--cat); border-color: var(--cat); }
+
+  .ver { font-size:0.66rem; color:var(--txt2); white-space:nowrap; text-align:center; }
+
+  .sep td {
+    padding: 0.35rem 0.7rem;
+    font-weight: 600;
+    font-size: 0.68rem;
+    color: var(--hdr2);
+    letter-spacing: 0.06em;
+    border-top: 2px solid var(--hdr2);
+    background: #f8f7f4;
+  }
+
+  .gb td { border-top: 1.5px solid var(--bdr); }
+  .gb td:first-child { padding-top: 0.45rem; }
+
+  @media (max-width:900px) {
+    .wrap { grid-template-columns:1fr; }
+    table { font-size:0.7rem; }
+  }
+  @media (max-width:600px) {
+    .hdr h1 { font-size:0.9rem; }
+    table { font-size:0.65rem; }
+    td, thead th { padding:0.25rem 0.35rem; }
+  }
+
+  .card { opacity:0; transform:translateY(10px); animation:up .4s ease forwards; }
+  .card:nth-child(2) { animation-delay:.08s; }
+  @keyframes up { to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <h1>エクステリア メーカー カタログ・規格表・補修部品 一覧</h1>
+  <div class="lg">
+    <span><i class="t t-c">カタログ</i></span>
+    <span><i class="t t-s">規格表</i></span>
+    <span><i class="t t-p">補修部品他</i></span>
+    <span><i class="t t-m">表札シュミ</i></span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== 左カラム ===== -->
+  <div class="card">
+    <table>
+      <thead><tr><th>メーカー</th><th>種別</th><th>資料名</th><th>最新版</th></tr></thead>
+      <tbody>
+        <!-- 三協アルミ -->
+        <tr>
+          <td class="mk" rowspan="11">三協アルミ</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=STAWC001&catalogId=20175330000&pageGroupId=1&designID=WCAT001&catalogCategoryId=&pagePosition=R" target="_blank">総合カタログ</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=20202010000&pageGroupId=1&volumeID=STAWC001&keyword=&categoryID=&sortMode=&sortKey=&sortOrder=&designID=WCAT001&designConfirmFlg=" target="_blank">総合規格表（門まわり）</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=20202020000&pageGroupId=1&volumeID=STAWC001&keyword=&categoryID=&sortMode=&sortKey=&sortOrder=&designID=WCAT001&designConfirmFlg=" target="_blank">総合規格表（カーポート）</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-p">補修部品他</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=20308520000&pageGroupId=1&volumeID=STAWC001&keyword=&categoryID=&sortMode=&sortKey=&sortOrder=&designID=WCAT001&designConfirmFlg=" target="_blank">特注価格表</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=STAWC001&catalogId=20138370000&pageGroupId=1&designID=WCAT001&catalogCategoryId=&pagePosition=R" target="_blank">WEXカタログ</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=20252310000&pageGroupId=1&volumeID=STAWC001&keyword=&categoryID=&sortMode=&sortKey=&sortOrder=&designID=WCAT001&designConfirmFlg=" target="_blank">WEX規格表（テラス編）</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=20283870000&pageGroupId=1&volumeID=STAWC001&keyword=&categoryID=&sortMode=&sortKey=&sortOrder=&designID=WCAT001&designConfirmFlg=" target="_blank">WEX規格表（バルコニー）</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=20341360000&pageGroupId=1&volumeID=STAWC001&keyword=&categoryID=&sortMode=&sortKey=&sortOrder=&designID=WCAT001&designConfirmFlg=" target="_blank">WEX規格表（アウトドア）</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-p">補修部品他</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=20398120000&pageGroupId=1&volumeID=STAWC001&keyword=&categoryID=&sortMode=&sortKey=&sortOrder=&designID=WCAT001&designConfirmFlg=" target="_blank">補修部品価格表</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=STAWC001&catalogId=20202030000&pageGroupId=1&designID=WCAT001&catalogCategoryId=&pagePosition=R" target="_blank">PEXカタログ</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://appsp.st-grp.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=20236210000&pageGroupId=1&volumeID=STAWC001&keyword=&categoryID=&sortMode=&sortKey=&sortOrder=&designID=WCAT001&designConfirmFlg=" target="_blank">PEX規格表</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+
+        <!-- YKKAP -->
+        <tr class="gb">
+          <td class="mk" rowspan="6">YKKAP</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://webcatalog.ykkap.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=YKKAPDC1&catalogId=12420620000&pageGroupId=1&designID=pro&catalogCategoryId=&designConfirmFlg=&pagePosition=R" target="_blank">総合カタログ</a></td>
+          <td class="ver">2025</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://webcatalog.ykkap.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=12384220000&pageGroupId=1&volumeID=YKKAPDC1&keyword=&categoryID=&sortMode=&sortKey=&sortOrder=&designID=user&designConfirmFlg=" target="_blank">規格表（門まわり）</a></td>
+          <td class="ver">2025</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://webcatalog.ykkap.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=12374670000&pageGroupId=1&volumeID=YKKAPDC1&keyword=&categoryID=&sortMode=&sortKey=&sortOrder=&designID=pro&designConfirmFlg=" target="_blank">規格表（車庫まわり）</a></td>
+          <td class="ver">2025</td>
+        </tr>
+        <tr>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://webcatalog.ykkap.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=YKKAPDC1&catalogId=12703020000&pageGroupId=1&designID=pro&catalogCategoryId=&designConfirmFlg=&pagePosition=R" target="_blank">テラス屋根、バルコニー屋根</a></td>
+          <td class="ver">2025</td>
+        </tr>
+        <tr>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://webcatalog.ykkap.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=YKKAPDC1&catalogId=12715820000&pageGroupId=1&designID=pro&catalogCategoryId=&designConfirmFlg=&pagePosition=R" target="_blank">テラス囲い、バルコニー囲い</a></td>
+          <td class="ver">2025</td>
+        </tr>
+        <tr>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://webcatalog.ykkap.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=YKKAPDC1&catalogId=12487220000&pageGroupId=1&designID=pro&catalogCategoryId=&designConfirmFlg=&pagePosition=R" target="_blank">カーポート</a></td>
+          <td class="ver">2025</td>
+        </tr>
+
+        <!-- LIXIL -->
+        <tr class="gb">
+          <td class="mk" rowspan="8">LIXIL</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://webcatalog.lixil.co.jp/cgi-bin/openCatalogAuth.cgi?c=TF1100&p=1" target="_blank">総合カタログ</a></td>
+          <td class="ver">2026-2027</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://webcatalog.lixil.co.jp/cgi-bin/openCatalogAuth.cgi?c=UL0100&p=1" target="_blank">規格表 門まわり・フェンス・車庫まわり編</a></td>
+          <td class="ver">2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://webcatalog.lixil.co.jp/cgi-bin/openCatalogAuth.cgi?c=UL0300&p=1" target="_blank">規格表 カーポート編①SC編</a></td>
+          <td class="ver">2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://webcatalog.lixil.co.jp/cgi-bin/openCatalogAuth.cgi?c=UL0400&p=1" target="_blank">規格表 カーポート編②フーゴネスカ他</a></td>
+          <td class="ver">2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://webcatalog.lixil.co.jp/cgi-bin/openCatalogAuth.cgi?c=UL1300&p=1" target="_blank">規格表 テラス編①</a></td>
+          <td class="ver">2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-s">規格表</span></td>
+          <td><a href="https://webcatalog.lixil.co.jp/cgi-bin/openCatalogAuth.cgi?c=UL1400&p=1" target="_blank">規格表 テラス編②テラスVS</a></td>
+          <td class="ver">2026</td>
+        </tr>
+        <tr>
+          <td><span class="t t-p">補修部品他</span></td>
+          <td><a href="https://webcatalog.lixil.co.jp/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogId=15829670000&pageGroupId=&volumeID=LXL13001&designID=newinter&pagePosition=" target="_blank">補修部品価格表</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== 右カラム ===== -->
+  <div class="card">
+    <table>
+      <thead><tr><th>メーカー</th><th>種別</th><th>資料名</th><th>最新版</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mk">四国化成</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://download.shikoku.co.jp/iportal/cv.do?c=3112600000&pg=1&v=CATALOG" target="_blank">総合カタログ</a></td>
+          <td class="ver">2025年度版</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">タカショー</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://www.catalabo.org/iportal/cv.do?c=85858310000&pg=1&v=CATALABO" target="_blank">総合カタログ</a></td>
+          <td class="ver">2025</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">ギャザー</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://dmp-net.meclib.jp/library/books/gather_vol14_meiku/book/index.html" target="_blank">gather2025</a></td>
+          <td class="ver">Vol.14</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">積水樹脂</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://www.sekisuijushi.co.jp/catalog/ebook/exterior/index.html" target="_blank">カタログ</a></td>
+          <td class="ver">2025</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">東洋工業</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://toyo-kogyo.icata.net/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=TYK10002&catalogId=22937190000&pageGroupId=&designID=TOYOD01&catalogCategoryId=&designConfirmFlg=" target="_blank">総合カタログ</a></td>
+          <td class="ver">2026</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">ユニソン</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://www.catalabo.org/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=CATALABO&catalogId=83813720000&pageGroupId=&designID=link&catalogCategoryId=&designConfirmFlg=" target="_blank">総合カタログ</a></td>
+          <td class="ver">2025</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">イナバ物置</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://www.inaba-ss.co.jp/data/catalog/monooki/65/book/" target="_blank">総合カタログ</a></td>
+          <td class="ver">Vol.65</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">ヨドコウ</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://yodoko.gamedios.com/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&catalogCategoryId=&catalogId=5945380000&pageGroupId=1&volumeID=YDK00001&designID=YDKD001&designConfirmFlg=" target="_blank">総合カタログ</a></td>
+          <td class="ver">2025</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">タクボ物置</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://www.e-ty.co.jp/catalog/2025/" target="_blank">総合カタログ</a></td>
+          <td class="ver">2025</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">片岡産業</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://www.e-kataoka.co.jp/catalog/jsversion/steel_w/index.html" target="_blank">総合カタログ</a></td>
+          <td class="ver">―</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">太陽エコブロックス</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://www.taiyo-ecobloxx.com/catalogue/nishinihon_chukyo/index.html" target="_blank">カタログ</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">ニッコーエクステリア</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://nikko-ex.jp/ebook/GARDEN_WATER_2024-2025/?pNo=1&detailFlg=0" target="_blank">カタログ</a></td>
+          <td class="ver">2024-2025</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">NITTO</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://www.catalabo.org/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=CATALABO&catalogId=84005910000&pageGroupId=1&catalogCategoryId=&keyword=" target="_blank">総合カタログ</a></td>
+          <td class="ver">2025-2026</td>
+        </tr>
+
+        <!-- 表札セクション -->
+        <tr class="sep"><td colspan="4">表札カタログ ＆ シミュレーション</td></tr>
+
+        <tr>
+          <td class="mk" rowspan="2">福彫</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://fukucyo.co.jp/webcatalog/vol24/" target="_blank">カタログ</a></td>
+          <td class="ver">Vol.24</td>
+        </tr>
+        <tr>
+          <td><span class="t t-m">表札シュミ</span></td>
+          <td><a href="https://sign-simulation.net/fukucyo" target="_blank">表札・サインシミュレーション</a></td>
+          <td class="ver">―</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk" rowspan="2">美濃クラフト</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://www.minocraft.co.jp/archives/digitalbook/digitalbook_vol24/html5.html" target="_blank">カタログ</a></td>
+          <td class="ver">2026-2027 Vol.25</td>
+        </tr>
+        <tr>
+          <td><span class="t t-m">表札シュミ</span></td>
+          <td><a href="https://www.minocraft.co.jp/simulator/mino/" target="_blank">表札・サインシミュレーション</a></td>
+          <td class="ver">―</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk" rowspan="2">丸三タカギ</td>
+          <td><span class="t t-c">カタログ</span></td>
+          <td><a href="https://www.catalabo.org/iportal/CatalogViewInterfaceStartUpAction.do?method=startUp&mode=PAGE&volumeID=CATALABO&catalogId=83858910000&pageGroupId=&designID=link&catalogCategoryId=&designConfirmFlg=" target="_blank">カタログ</a></td>
+          <td class="ver">2025-2026 Vol.6</td>
+        </tr>
+        <tr>
+          <td><span class="t t-m">表札シュミ</span></td>
+          <td><a href="https://www.simulation.co.jp/ielogo/" target="_blank">表札・サインシミュレーション</a></td>
+          <td class="ver">―</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">LIXIL</td>
+          <td><span class="t t-m">表札シュミ</span></td>
+          <td><a href="https://sign-simulation.net/lixil" target="_blank">表札・サインシミュレーション</a></td>
+          <td class="ver">―</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">三協アルミ</td>
+          <td><span class="t t-m">表札シュミ</span></td>
+          <td><a href="https://www.simulation.co.jp/alumi.st-grp/index.html" target="_blank">表札・サインシミュレーション</a></td>
+          <td class="ver">―</td>
+        </tr>
+        <tr class="gb">
+          <td class="mk">YKKAP</td>
+          <td><span class="t t-m">表札シュミ</span></td>
+          <td><a href="https://www.simulation.co.jp/ykkap/" target="_blank">表札・サインシミュレーション</a></td>
+          <td class="ver">―</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>
